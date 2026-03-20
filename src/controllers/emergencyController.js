@@ -69,6 +69,7 @@ const fulfillRequest = asyncHandler(async (req, res) => {
 
   const stockBags = await Inventory.find({
     bloodType: request.bloodType,
+    quantity: { $gt: 0 },
     $or: [{ safetyFlag: "SAFE" }, { status: "AVAILABLE" }, { status: "SAFE" }]
   }).sort({ collectedAt: 1 });
 
@@ -88,6 +89,11 @@ const fulfillRequest = asyncHandler(async (req, res) => {
   }
 
   const fulfilledNow = units - unitsToDispatch;
+  if (fulfilledNow <= 0) {
+    res.status(400);
+    throw new Error(`No safe ${request.bloodType} units are currently available for dispatch`);
+  }
+
   request.unitsFulfilled += fulfilledNow;
   request.status = request.unitsFulfilled >= request.unitsRequested ? "FULFILLED" : "PARTIAL";
   await request.save();
