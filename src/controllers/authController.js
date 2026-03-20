@@ -20,6 +20,11 @@ const register = asyncHandler(async (req, res) => {
     throw new Error("Name, email, and password are required");
   }
 
+  if (!province || !district) {
+    res.status(400);
+    throw new Error("Province and district are required");
+  }
+
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
     res.status(409);
@@ -33,13 +38,16 @@ const register = asyncHandler(async (req, res) => {
     role: "DONOR"
   });
 
-  await Donor.create({
+  // Create donor with validated hospital
+  const donorData = {
     user: user._id,
     bloodType: bloodType || "UNKNOWN",
-    province,
-    district,
-    nearestHospital
-  });
+    province: province.trim(),
+    district: district.trim(),
+    nearestHospital: nearestHospital ? nearestHospital.trim() : ""
+  };
+
+  await Donor.create(donorData);
 
   const token = generateToken(user._id);
   res.status(201).json(buildAuthResponse(user, token));
