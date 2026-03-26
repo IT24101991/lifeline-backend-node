@@ -87,13 +87,22 @@ const updateLabTest = asyncHandler(async (req, res) => {
 const getLowStockAlerts = asyncHandler(async (req, res) => {
   const standardTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   
+  // Calculate expiry date (42 days ago)
+  const expiryLimit = new Date();
+  expiryLimit.setDate(expiryLimit.getDate() - 42);
+
   const pipeline = [
     {
       $match: {
-        $or: [
-          { safetyFlag: "SAFE" },
-          { status: "AVAILABLE" },
-          { status: "SAFE" }
+        $and: [
+          {
+            $or: [
+              { safetyFlag: "SAFE" },
+              { status: "AVAILABLE" },
+              { status: "SAFE" }
+            ]
+          },
+          { collectedAt: { $gte: expiryLimit } }
         ]
       }
     },
