@@ -84,9 +84,55 @@ const updateLabTest = asyncHandler(async (req, res) => {
   });
 });
 
+const getLowStockAlerts = asyncHandler(async (req, res) => {
+  const standardTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+  
+  const pipeline = [
+    {
+      $match: {
+        $or: [
+          { safetyFlag: "SAFE" },
+          { status: "AVAILABLE" },
+          { status: "SAFE" }
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: "$bloodType",
+        totalUnits: { $sum: "$quantity" }
+      }
+    }
+  ];
+
+  const results = await Inventory.aggregate(pipeline);
+  
+  // Create a map of existing counts
+  const countsMap = {};
+  results.forEach(r => {
+    countsMap[r._id] = r.totalUnits;
+  });
+
+  // Map against standard types to include 0-unit ones, then filter <= 5
+  const alerts = standardTypes
+    .map(type => {
+      const units = countsMap[type] || 0;
+      return {
+        bloodType: type,
+        units: units,
+        level: units <= 2 ? "CRITICAL" : "LOW"
+      };
+    })
+    .filter(item => item.units <= 5)
+    .sort((a, b) => a.units - b.units);
+
+  res.status(200).json(alerts);
+});
+
 module.exports = {
   getInventory,
   addInventory,
   getLabResults,
-  updateLabTest
+  updateLabTest,
+  getLowStockAlerts
 };

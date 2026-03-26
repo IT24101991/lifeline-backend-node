@@ -4,7 +4,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const logActivity = require("../utils/activityLogger");
 
 const createHospitalRequest = asyncHandler(async (req, res) => {
-  const { hospitalUserId, bloodType, unitsRequested, priority, reason } = req.body;
+  const { hospitalUserId, hospital, bloodType, unitsRequested, priority, reason } = req.body;
 
   if (!bloodType || !unitsRequested) {
     res.status(400);
@@ -13,6 +13,7 @@ const createHospitalRequest = asyncHandler(async (req, res) => {
 
   const request = await HospitalRequest.create({
     hospitalUserId,
+    hospital,
     bloodType,
     unitsRequested,
     priority: priority || "NORMAL",
@@ -37,7 +38,7 @@ const getHospitalRequests = asyncHandler(async (req, res) => {
     requests.map((request) => ({
       id: request._id,
       hospitalUserId: request.hospitalUserId?._id || request.hospitalUserId,
-      hospital: request.hospitalUserId?.name || "Hospital",
+      hospital: request.hospital || request.hospitalUserId?.name || "Hospital",
       bloodType: request.bloodType,
       unitsRequested: request.unitsRequested,
       unitsFulfilled: request.unitsFulfilled,

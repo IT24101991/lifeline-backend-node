@@ -6,6 +6,10 @@ const hospitalRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
+    hospital: {
+      type: String,
+      trim: true
+    },
     bloodType: {
       type: String,
       required: true
