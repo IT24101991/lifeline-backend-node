@@ -36,6 +36,23 @@ const serializeLabResult = (result = {}) => {
   };
 };
 
+const parseBooleanField = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return value.toLowerCase() === "true";
+  return Boolean(value);
+};
+
+const parsePositiveDetails = (value) => {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return null;
+  }
+};
+
 const getInventory = asyncHandler(async (req, res) => {
   const items = await Inventory.find({}).sort({ collectedAt: -1 });
   res.status(200).json(
@@ -116,13 +133,13 @@ const updateLabTest = asyncHandler(async (req, res) => {
   }
 
   const result = {
-    hiv: Boolean(req.body.hiv),
-    hep: Boolean(req.body.hep),
-    malaria: Boolean(req.body.malaria),
+    hiv: parseBooleanField(req.body.hiv),
+    hep: parseBooleanField(req.body.hep),
+    malaria: parseBooleanField(req.body.malaria),
     reason: req.body.reason || "",
     testTechnician: req.body.testTechnician || "Unknown",
     attachments: [],
-    positiveDetails: req.body.positiveDetails || null
+    positiveDetails: parsePositiveDetails(req.body.positiveDetails)
   };
 
   // Handle file uploads
@@ -185,6 +202,7 @@ const uploadLabTestFiles = asyncHandler(async (req, res) => {
     fileSize: file.size
   }));
 
+  latestResult.attachments = latestResult.attachments || [];
   latestResult.attachments.push(...newFiles);
   await item.save();
 
