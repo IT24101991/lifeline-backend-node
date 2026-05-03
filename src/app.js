@@ -40,11 +40,8 @@ app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/camps", campRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/appointments", appointmentRoutes);
-<<<<<<< HEAD
 app.use("/api/admin", adminRoutes);
-=======
 app.use("/api/admin/users", adminRoutes);
->>>>>>> 445617f4568e9ef3ae030c04dd1a67cb6df1ee75
 app.use("/api/hospital-requests", hospitalRequestRoutes);
 app.use("/api/emergency", emergencyRoutes);
 app.use("/api/inventory", inventoryRoutes);
