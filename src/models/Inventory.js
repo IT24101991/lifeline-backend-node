@@ -3,9 +3,16 @@ const mongoose = require("mongoose");
 const fileAttachmentSchema = new mongoose.Schema(
   {
     filename: String,
+    publicId: String,
     originalName: String,
     mimeType: String,
     fileSize: Number,
+    fileUrl: String,
+    storageProvider: {
+      type: String,
+      enum: ["local", "cloudinary"],
+      default: "local"
+    },
     uploadedAt: {
       type: Date,
       default: Date.now

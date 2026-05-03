@@ -1,17 +1,46 @@
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+const hasCloudinaryConfig = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+if (hasCloudinaryConfig) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
 
 const uploadDirectory = path.join(process.cwd(), "uploads");
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const storage = multer.diskStorage({
+const localStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDirectory),
   filename: (req, file, cb) => {
     const safeName = file.originalname.replace(/\s+/g, "-");
     cb(null, `${Date.now()}-${safeName}`);
   }
 });
+
+const cloudinaryStorage = hasCloudinaryConfig
+  ? new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: process.env.CLOUDINARY_UPLOAD_FOLDER || "lifeline_uploads",
+        resource_type: "auto",
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "pdf"]
+      }
+    })
+  : null;
+
+const storage = cloudinaryStorage || localStorage;
 
 // Image file filter (original)
 const imageFileFilter = (req, file, cb) => {
@@ -27,6 +56,7 @@ const labFileFilter = (req, file, cb) => {
     "image/jpeg",
     "image/png",
     "image/jpg",
+    "image/webp",
     "application/pdf"
   ];
   
@@ -55,4 +85,3 @@ const labUpload = multer({
 
 module.exports = upload;
 module.exports.labUpload = labUpload;
-

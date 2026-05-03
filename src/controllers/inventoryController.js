@@ -2,6 +2,26 @@ const Inventory = require("../models/Inventory");
 const asyncHandler = require("../utils/asyncHandler");
 const logActivity = require("../utils/activityLogger");
 
+const getFileUrl = (attachment = {}) => {
+  if (attachment.fileUrl) return attachment.fileUrl;
+  if (attachment.filename && String(attachment.filename).startsWith("http")) return attachment.filename;
+  return attachment.filename ? `/uploads/${attachment.filename}` : "";
+};
+
+const serializeUploadFile = (file = {}) => {
+  const isCloudinaryUpload = Boolean(file.path && String(file.path).startsWith("http"));
+
+  return {
+    filename: file.filename,
+    publicId: isCloudinaryUpload ? file.filename : undefined,
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    fileSize: file.size,
+    fileUrl: isCloudinaryUpload ? file.path : `/uploads/${file.filename}`,
+    storageProvider: isCloudinaryUpload ? "cloudinary" : "local"
+  };
+};
+
 const serializeLabResult = (result = {}) => {
   const hivPositive = Boolean(result.hiv);
   const hepPositive = Boolean(result.hep);
@@ -26,11 +46,13 @@ const serializeLabResult = (result = {}) => {
     ].filter(Boolean),
     attachments: (result.attachments || []).map(attachment => ({
       filename: attachment.filename,
+      publicId: attachment.publicId,
       originalName: attachment.originalName,
       mimeType: attachment.mimeType,
       fileSize: attachment.fileSize,
       uploadedAt: attachment.uploadedAt,
-      fileUrl: `/uploads/${attachment.filename}`
+      fileUrl: getFileUrl(attachment),
+      storageProvider: attachment.storageProvider || (getFileUrl(attachment).startsWith("http") ? "cloudinary" : "local")
     })),
     positiveDetails: result.positiveDetails || null
   };
@@ -144,12 +166,7 @@ const updateLabTest = asyncHandler(async (req, res) => {
 
   // Handle file uploads
   if (req.files && req.files.length > 0) {
-    result.attachments = req.files.map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      fileSize: file.size
-    }));
+    result.attachments = req.files.map(serializeUploadFile);
   }
 
   const hasPositiveMarker = result.hiv || result.hep || result.malaria;
@@ -195,12 +212,7 @@ const uploadLabTestFiles = asyncHandler(async (req, res) => {
   const latestResult = item.labResults[item.labResults.length - 1];
   
   // Add new files to attachments
-  const newFiles = req.files.map(file => ({
-    filename: file.filename,
-    originalName: file.originalname,
-    mimeType: file.mimetype,
-    fileSize: file.size
-  }));
+  const newFiles = req.files.map(serializeUploadFile);
 
   latestResult.attachments = latestResult.attachments || [];
   latestResult.attachments.push(...newFiles);
@@ -216,10 +228,12 @@ const uploadLabTestFiles = asyncHandler(async (req, res) => {
     message: `${req.files.length} file(s) uploaded successfully`,
     attachments: latestResult.attachments.map(att => ({
       filename: att.filename,
+      publicId: att.publicId,
       originalName: att.originalName,
       mimeType: att.mimeType,
       fileSize: att.fileSize,
-      fileUrl: `/uploads/${att.filename}`
+      fileUrl: getFileUrl(att),
+      storageProvider: att.storageProvider || (getFileUrl(att).startsWith("http") ? "cloudinary" : "local")
     }))
   });
 });
