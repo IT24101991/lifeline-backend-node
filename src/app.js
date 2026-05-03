@@ -28,6 +28,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "LifeLine backend is running",
+    health: "/api/health"
+  });
+});
+
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
