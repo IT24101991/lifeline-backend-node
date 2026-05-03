@@ -33,18 +33,12 @@ const labFileFilter = (req, file, cb) => {
   if (!allowedMimes.includes(file.mimetype)) {
     return cb(new Error("Only image and PDF files are allowed"));
   }
-const fileFilter = (req, file, cb) => {
-  if (!file.mimetype.startsWith("image/")) {
-    return cb(new Error("Only image uploads are allowed"));
-  }
-
   cb(null, true);
 };
 
 const upload = multer({
   storage,
   fileFilter: imageFileFilter,
-  fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024
   }
@@ -61,4 +55,4 @@ const labUpload = multer({
 
 module.exports = upload;
 module.exports.labUpload = labUpload;
-module.exports = upload;
+
