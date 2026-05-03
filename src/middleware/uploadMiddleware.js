@@ -32,11 +32,13 @@ const localStorage = multer.diskStorage({
 const cloudinaryStorage = hasCloudinaryConfig
   ? new CloudinaryStorage({
       cloudinary,
-      params: {
+      params: (req, file) => ({
         folder: process.env.CLOUDINARY_UPLOAD_FOLDER || "lifeline_uploads",
-        resource_type: "auto",
-        allowed_formats: ["jpg", "jpeg", "png", "webp", "pdf"]
-      }
+        resource_type: file.mimetype === "application/pdf" ? "raw" : "image",
+        allowed_formats: file.mimetype === "application/pdf"
+          ? ["pdf"]
+          : ["jpg", "jpeg", "png", "webp"]
+      })
     })
   : null;
 
