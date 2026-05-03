@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+<<<<<<< HEAD
 const fileAttachmentSchema = new mongoose.Schema(
   {
     filename: String,
@@ -14,6 +15,8 @@ const fileAttachmentSchema = new mongoose.Schema(
   { _id: false }
 );
 
+=======
+>>>>>>> 445617f4568e9ef3ae030c04dd1a67cb6df1ee75
 const labResultSchema = new mongoose.Schema(
   {
     hiv: {
@@ -32,6 +35,7 @@ const labResultSchema = new mongoose.Schema(
     testedAt: {
       type: Date,
       default: Date.now
+<<<<<<< HEAD
     },
     testTechnician: String,
     attachments: [fileAttachmentSchema],
@@ -43,6 +47,8 @@ const labResultSchema = new mongoose.Schema(
         default: "MEDIUM"
       },
       notes: String
+=======
+>>>>>>> 445617f4568e9ef3ae030c04dd1a67cb6df1ee75
     }
   },
   { _id: false }

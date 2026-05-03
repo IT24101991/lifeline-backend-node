@@ -13,6 +13,7 @@ const storage = multer.diskStorage({
   }
 });
 
+<<<<<<< HEAD
 // Image file filter (original)
 const imageFileFilter = (req, file, cb) => {
   if (!file.mimetype.startsWith("image/")) {
@@ -33,17 +34,29 @@ const labFileFilter = (req, file, cb) => {
   if (!allowedMimes.includes(file.mimetype)) {
     return cb(new Error("Only image and PDF files are allowed"));
   }
+=======
+const fileFilter = (req, file, cb) => {
+  if (!file.mimetype.startsWith("image/")) {
+    return cb(new Error("Only image uploads are allowed"));
+  }
+
+>>>>>>> 445617f4568e9ef3ae030c04dd1a67cb6df1ee75
   cb(null, true);
 };
 
 const upload = multer({
   storage,
+<<<<<<< HEAD
   fileFilter: imageFileFilter,
+=======
+  fileFilter,
+>>>>>>> 445617f4568e9ef3ae030c04dd1a67cb6df1ee75
   limits: {
     fileSize: 5 * 1024 * 1024
   }
 });
 
+<<<<<<< HEAD
 // Lab file upload (images + PDFs)
 const labUpload = multer({
   storage,
@@ -55,3 +68,6 @@ const labUpload = multer({
 
 module.exports = upload;
 module.exports.labUpload = labUpload;
+=======
+module.exports = upload;
+>>>>>>> 445617f4568e9ef3ae030c04dd1a67cb6df1ee75
