@@ -34,10 +34,8 @@ const cloudinaryStorage = hasCloudinaryConfig
       cloudinary,
       params: (req, file) => ({
         folder: process.env.CLOUDINARY_UPLOAD_FOLDER || "lifeline_uploads",
-        resource_type: file.mimetype === "application/pdf" ? "raw" : "image",
-        allowed_formats: file.mimetype === "application/pdf"
-          ? ["pdf"]
-          : ["jpg", "jpeg", "png", "webp"]
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "pdf"]
       })
     })
   : null;
