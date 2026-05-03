@@ -1,6 +1,47 @@
 const Camp = require("../models/Camp");
 const asyncHandler = require("../utils/asyncHandler");
 const { serializeCamp } = require("../utils/serializers");
+const {
+  assertDateWithinNext7Days,
+  assertTimeRange
+} = require("../utils/scheduleValidation");
+
+const NAME_PATTERN = /^[A-Za-z\s]+$/;
+const TEXT_WITHOUT_SYMBOLS_PATTERN = /^[A-Za-z0-9\s]+$/;
+
+const assertCampPayload = ({ name, location, address, googleMapLink, date, startTime, endTime }) => {
+  if (!NAME_PATTERN.test(String(name || "").trim())) {
+    throw new Error("Camp name can contain only letters and spaces");
+  }
+
+  if (location && !TEXT_WITHOUT_SYMBOLS_PATTERN.test(String(location).trim())) {
+    throw new Error("Location can contain only letters, numbers, and spaces");
+  }
+
+  if (address && !TEXT_WITHOUT_SYMBOLS_PATTERN.test(String(address).trim())) {
+    throw new Error("Address can contain only letters, numbers, and spaces");
+  }
+
+  if (googleMapLink) {
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(googleMapLink);
+    } catch (error) {
+      throw new Error("Google Map link must be a valid Google Maps place URL");
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase().replace(/^www\./, "");
+    if (!hostname.endsWith("google.com") || !parsedUrl.pathname.includes("/maps/place/")) {
+      throw new Error("Google Map link must be a Google Maps place link");
+    }
+  }
+
+  assertDateWithinNext7Days(date, "Camp date");
+
+  if (startTime || endTime) {
+    assertTimeRange(startTime, endTime);
+  }
+};
 
 const getCamps = asyncHandler(async (req, res) => {
   const camps = await Camp.find({}).sort({ date: 1 });
@@ -15,14 +56,17 @@ const createCamp = asyncHandler(async (req, res) => {
     throw new Error("Name, province, district, and date are required");
   }
 
+  res.status(400);
+  assertCampPayload({ name, location, address, googleMapLink, date, startTime, endTime });
+
   const camp = await Camp.create({
-    name,
+    name: name.trim(),
     province,
     district,
     nearestHospital,
-    location,
-    address,
-    googleMapLink,
+    location: location?.trim(),
+    address: address?.trim(),
+    googleMapLink: googleMapLink?.trim(),
     date,
     startTime,
     endTime,
@@ -40,6 +84,9 @@ const updateCamp = asyncHandler(async (req, res) => {
     throw new Error("Name, province, district, and date are required");
   }
 
+  res.status(400);
+  assertCampPayload({ name, location, address, googleMapLink, date, startTime, endTime });
+
   const camp = await Camp.findById(req.params.id);
 
   if (!camp) {
@@ -47,13 +94,13 @@ const updateCamp = asyncHandler(async (req, res) => {
     throw new Error("Camp not found");
   }
 
-  camp.name = name;
+  camp.name = name.trim();
   camp.province = province;
   camp.district = district;
   camp.nearestHospital = nearestHospital;
-  camp.location = location;
-  camp.address = address;
-  camp.googleMapLink = googleMapLink;
+  camp.location = location?.trim();
+  camp.address = address?.trim();
+  camp.googleMapLink = googleMapLink?.trim();
   camp.date = date;
   camp.startTime = startTime;
   camp.endTime = endTime;

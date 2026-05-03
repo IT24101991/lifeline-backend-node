@@ -1,10 +1,20 @@
 const Appointment = require("../models/Appointment");
+const Camp = require("../models/Camp");
 const Donor = require("../models/Donor");
 const Inventory = require("../models/Inventory");
+const mongoose = require("mongoose");
 const asyncHandler = require("../utils/asyncHandler");
 const { buildEligibility } = require("./donorController");
 const logActivity = require("../utils/activityLogger");
 const { serializeAppointment } = require("../utils/serializers");
+const {
+  HOSPITAL_WORK_START,
+  HOSPITAL_WORK_END,
+  assertAppointmentDateWithinNext7Days,
+  assertTimeWithinRange,
+  isWorkingDay,
+  toDateKey
+} = require("../utils/scheduleValidation");
 
 const bookAppointment = asyncHandler(async (req, res) => {
   const {
@@ -27,6 +37,18 @@ const bookAppointment = asyncHandler(async (req, res) => {
     throw new Error("donorUserId, hospitalId, centerName, and date are required");
   }
 
+  const appointmentDate = new Date(date);
+  if (Number.isNaN(appointmentDate.getTime())) {
+    res.status(400);
+    throw new Error("Appointment date is invalid");
+  }
+
+  const appointmentDateKey = toDateKey(appointmentDate);
+  const appointmentTime = String(date).split("T")[1]?.slice(0, 5);
+
+  res.status(400);
+  assertAppointmentDateWithinNext7Days(date);
+
   if (String(req.user._id) !== String(donorUserId) && req.user.role !== "ADMIN" && req.user.role !== "HOSPITAL") {
     res.status(403);
     throw new Error("You cannot book appointments for another user");
@@ -39,6 +61,37 @@ const bookAppointment = asyncHandler(async (req, res) => {
     throw new Error(eligibility.reason);
   }
 
+  if ((centerType || "HOSPITAL") === "CAMP") {
+    if (!mongoose.Types.ObjectId.isValid(String(hospitalId))) {
+      res.status(400);
+      throw new Error("Camp id is invalid");
+    }
+
+    const camp = await Camp.findById(hospitalId);
+    if (!camp) {
+      res.status(404);
+      throw new Error("Camp not found");
+    }
+
+    if (appointmentDateKey !== camp.date) {
+      res.status(400);
+      throw new Error(`This camp only accepts bookings on ${camp.date}`);
+    }
+
+    if (camp.startTime && camp.endTime) {
+      res.status(400);
+      assertTimeWithinRange(appointmentTime, camp.startTime, camp.endTime, "Appointment time");
+    }
+  } else {
+    if (!isWorkingDay(appointmentDate)) {
+      res.status(400);
+      throw new Error("Hospital appointment date must be on a working day");
+    }
+
+    res.status(400);
+    assertTimeWithinRange(appointmentTime, HOSPITAL_WORK_START, HOSPITAL_WORK_END, "Hospital appointment time");
+  }
+
   const appointment = await Appointment.create({
     donor: donor ? donor._id : donorId,
     donorUserId,
@@ -47,7 +100,7 @@ const bookAppointment = asyncHandler(async (req, res) => {
     centerType: centerType || "HOSPITAL",
     centerName,
     bloodType,
-    date: new Date(date),
+    date: appointmentDate,
     questionnaire: {
       hasDiagnosedDiseases: Boolean(hasDiagnosedDiseases),
       takingMedications: Boolean(takingMedications),
