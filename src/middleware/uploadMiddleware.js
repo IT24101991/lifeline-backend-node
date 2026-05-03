@@ -32,11 +32,34 @@ const localStorage = multer.diskStorage({
 const cloudinaryStorage = hasCloudinaryConfig
   ? new CloudinaryStorage({
       cloudinary,
-      params: (req, file) => ({
-        folder: process.env.CLOUDINARY_UPLOAD_FOLDER || "lifeline_uploads",
-        resource_type: "image",
-        allowed_formats: ["jpg", "jpeg", "png", "webp", "pdf"]
-      })
+      params: (req, file) => {
+        const folder = process.env.CLOUDINARY_UPLOAD_FOLDER || "lifeline_uploads";
+        const isPdf = file.mimetype === "application/pdf";
+        const safeOriginalName = path
+          .parse(file.originalname || "lab-report.pdf")
+          .name
+          .replace(/[^a-zA-Z0-9_-]/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-|-$/g, "")
+          .toLowerCase();
+        const timestamp = Date.now();
+
+        if (isPdf) {
+          return {
+            folder,
+            resource_type: "raw",
+            public_id: `${timestamp}-${safeOriginalName || "lab-report"}.pdf`,
+            allowed_formats: ["pdf"]
+          };
+        }
+
+        return {
+          folder,
+          resource_type: "image",
+          public_id: `${timestamp}-${safeOriginalName || "lab-image"}`,
+          allowed_formats: ["jpg", "jpeg", "png", "webp"]
+        };
+      }
     })
   : null;
 
