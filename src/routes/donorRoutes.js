@@ -7,10 +7,6 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 router.get("/all", protect, authorize("ADMIN"), getDonors);
-const { protect } = require("../middleware/authMiddleware");
-
-const router = express.Router();
-
 router.get("/:id/eligibility", protect, getEligibility);
 router.get("/user/:userId", protect, getDonorByUserId);
 router.post("/health-check", protect, healthCheck);
